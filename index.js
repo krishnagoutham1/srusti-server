@@ -24,6 +24,8 @@ app.use(
 app.use(express.json());
 app.use(helmet());
 
+app.set("trust proxy", 1);
+
 // express-session setup
 app.use(
   session({
@@ -32,6 +34,7 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
+      domain: process.env.COOKIE_DOMAIN || ".onrender.com",
       httpOnly: true,
       secure: process.env.NODE_ENV === "production", // true only in production (HTTPS)
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
