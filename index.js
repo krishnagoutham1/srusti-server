@@ -34,7 +34,7 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      domain: process.env.COOKIE_DOMAIN || ".onrender.com",
+      // domain: process.env.COOKIE_DOMAIN || ".onrender.com",
       httpOnly: true,
       secure: process.env.NODE_ENV === "production", // true only in production (HTTPS)
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
