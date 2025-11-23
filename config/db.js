@@ -20,9 +20,6 @@ const sequelize = new Sequelize(
     dialectOptions: {
       dateStrings: true,
       typeCast: true,
-      ssl: {
-        ca: fs.readFileSync("./isrgrootx1.pem"),
-      },
     },
   }
 );
