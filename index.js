@@ -61,8 +61,8 @@ const startServer = async () => {
   await connectToDB();
 
   if (process.env.NODE_ENV === "development") {
-    // await syncDB(); // 👈 run only in dev
-    // bootstrapAdmin();
+    await syncDB(); // 👈 run only in dev
+    bootstrapAdmin();
   }
 
   // ✅ Initialize cron jobs AFTER DB is connected, BEFORE app.listen
