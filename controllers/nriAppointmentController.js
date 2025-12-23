@@ -247,6 +247,67 @@ const getAllNriAppointments = async (req, res) => {
   }
 };
 
+// 📋 Controller: getNriAppointmentById
+// Fetch a single NRI appointment by appointment_id along with its slots.
+// Used for viewing appointment details in viewer / admin screens.
+const getNriAppointmentById = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Appointment ID is required",
+      });
+    }
+
+    const appointment = await NriAppointment.findOne({
+      where: {
+        appointment_id: id,
+      },
+      include: [
+        {
+          model: NriAppointmentSlots,
+          as: "slots",
+          attributes: [
+            "slot_id",
+            "ref_date",
+            "start_time",
+            "end_time",
+            "status",
+            "price_in_paise",
+            "consultation",
+          ],
+        },
+      ],
+      order: [
+        ["appointment_date", "ASC"],
+        [{ model: NriAppointmentSlots, as: "slots" }, "start_time", "ASC"],
+      ],
+    });
+
+    if (!appointment) {
+      return res.status(404).json({
+        success: false,
+        message: "Appointment not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: appointment.toJSON(),
+      message: "Appointment fetched successfully",
+    });
+  } catch (err) {
+    console.error("Error fetching appointment by ID:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch appointment",
+      error: err.message,
+    });
+  }
+};
+
 // ✏️ Controller: editNriAppointmentSlots
 // Updates an existing NRI appointment (only if it's active).
 // Modifies the appointment record in `NriAppointment`, deletes old related slots,
@@ -596,6 +657,112 @@ const getSlotById = async (req, res) => {
   }
 };
 
+// 🔍 Controller: getAdminSlotById
+// Fetches detailed admin-level slot information including booking & payment data
+const getAdminSlotById = async (req, res) => {
+  try {
+    const { slotId } = req.params;
+
+    if (!slotId) {
+      return res.status(400).json({
+        success: false,
+        message: "Slot ID is required",
+      });
+    }
+
+    const slotInfo = await NriAppointmentSlots.findOne({
+      where: { slot_id: slotId },
+      include: [
+        {
+          model: NriSlotBooking,
+          as: "bookings",
+          required: false, // slot may not be booked
+          include: [
+            {
+              model: Payment,
+              as: "payment",
+              required: false,
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!slotInfo) {
+      return res.status(404).json({
+        success: false,
+        message: "Slot details not found",
+      });
+    }
+
+    // Convert Sequelize instance → plain JSON
+    const slot = slotInfo.toJSON();
+
+    return res.status(200).json({
+      success: true,
+      message: "Detailed Slot information (Admin)",
+      data: {
+        // -------- Slot --------
+        slot_id: slot.slot_id,
+        appointment_id: slot.appointment_id,
+        ref_date: slot.ref_date,
+        start_time: slot.start_time,
+        end_time: slot.end_time,
+        status: slot.status,
+        hold_until: slot.hold_until,
+        consultation: slot.consultation,
+        price_in_paise: slot.price_in_paise,
+        currency: slot.currency,
+        createdAt: slot.createdAt,
+        updatedAt: slot.updatedAt,
+
+        // -------- Booking (if exists) --------
+        booking: slot.bookings?.length
+          ? {
+              booking_id: slot.bookings[0].booking_id,
+              booking_code: slot.bookings[0].booking_code,
+              booking_status: slot.bookings[0].booking_status,
+              payment_status: slot.bookings[0].payment_status,
+
+              // Customer
+              customer: {
+                name: slot.bookings[0].name,
+                email: slot.bookings[0].email,
+                mobile: slot.bookings[0].mobile,
+                country: slot.bookings[0].country,
+                gender: slot.bookings[0].gender,
+                dob: slot.bookings[0].dob,
+                timezone: slot.bookings[0].selected_timezone,
+              },
+
+              // Appointment-specific
+              user_notes: slot.bookings[0].user_notes,
+              meeting_link: slot.bookings[0].meeting_link,
+
+              // Payment (if exists)
+              payment: slot.bookings[0].payment
+                ? {
+                    amount_in_paise: slot.bookings[0].payment.amount_in_paise,
+                    currency: slot.bookings[0].payment.currency,
+                    status: slot.bookings[0].payment.status,
+                    razorpay_payment_id:
+                      slot.bookings[0].payment.razorpay_payment_id,
+                  }
+                : null,
+            }
+          : null,
+      },
+    });
+  } catch (err) {
+    console.error("Admin slot fetch error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch slot details",
+      error: err.message,
+    });
+  }
+};
+
 // 🕒 Controller: appointmentBooking
 // Handles initial slot booking — verifies appointment and slot availability, then places a temporary hold (15 min) on the slot in `NriAppointmentSlots`.
 // Creates a new booking record in `NriSlotBooking` with customer details and amount info.
@@ -812,17 +979,67 @@ const confirmBookingController = async (req, res) => {
   }
 };
 
+// ✅ Controller: markConsultationCompleted
+// Marks a booked slot’s consultation as COMPLETED in `NriAppointmentSlots`.
+// Used by admin after the consultation session is finished.
+// Ensures the slot exists and avoids duplicate updates by handling already-completed consultations safely.
+// Does not affect slot booking or payment status.
+const markConsultationCompleted = async (req, res) => {
+  try {
+    const { slotId } = req.params;
+
+    const slot = await NriAppointmentSlots.findByPk(slotId);
+
+    if (!slot) {
+      return res.status(404).json({
+        success: false,
+        message: "Slot not found",
+      });
+    }
+
+    // Already completed → idempotent response
+    if (slot.consultation === "COMPLETED") {
+      return res.status(200).json({
+        success: true,
+        message: "Consultation already marked as completed",
+        data: slot,
+      });
+    }
+
+    // Update consultation status
+    await slot.update({
+      consultation: "COMPLETED",
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Consultation marked as completed successfully",
+      data: slot,
+    });
+  } catch (error) {
+    console.error("Mark consultation completed error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to mark consultation as completed",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createNriAppointmentController,
   getAllNriAppointments,
+  getNriAppointmentById,
   editNriAppointmentSlots,
   getSlotsByAppointmentId,
   getPublishedAppointmentsByMonth,
   getSlotById,
+  getAdminSlotById,
   publishAppointment,
   deleteAppointment,
   appointmentBooking,
   confirmBookingController,
+  markConsultationCompleted,
 };
 
 // const getAppointmentsByMonth = async (req, res) => {

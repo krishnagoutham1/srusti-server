@@ -30,7 +30,7 @@ app.set("trust proxy", 1);
 app.use(
   session({
     name: "session",
-    secret: process.env.SESSION_SECRET || "supersecretkey",
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -38,7 +38,7 @@ app.use(
       httpOnly: true,
       secure: process.env.NODE_ENV === "production", // true only in production (HTTPS)
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 24 * 60 * 60 * 1000, // 1 day
+      maxAge: 24 * 60 * 60 * 7000, // 7 day
     },
   })
 );
@@ -46,7 +46,7 @@ app.use(
 app.use("/api", appRoutes);
 
 app.get("/", (req, res) =>
-  res.json({ message: "API is running...", data: req.session.user })
+  res.json({ message: "Sree Srusti server is running..." })
 );
 
 // 404 Handler

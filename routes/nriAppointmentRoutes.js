@@ -13,6 +13,9 @@ const {
   getSlotById,
   appointmentBooking,
   confirmBookingController,
+  getNriAppointmentById,
+  getAdminSlotById,
+  markConsultationCompleted,
 } = require("../controllers/nriAppointmentController");
 const { requireAuth } = require("../middleware/authMiddleware");
 
@@ -21,6 +24,7 @@ const router = require("express").Router();
 // Appointment admin side
 router.post("/", requireAuth, createNriAppointmentController);
 router.get("/", requireAuth, getAllNriAppointments);
+router.get("/appointment/:id", requireAuth, getNriAppointmentById);
 
 router.post("/publish", requireAuth, publishAppointment);
 router.delete("/:appointment_id", requireAuth, deleteAppointment);
@@ -29,13 +33,20 @@ router.put("/", requireAuth, editNriAppointmentSlots);
 // Appoinmet user side
 router.get("/refresh-slots", refreshSlots);
 router.get("/published-appointments-month", getPublishedAppointmentsByMonth);
-router.get("/:appointment_id/slots", getSlotsByAppointmentId);
-router.get("/:slotId", getSlotById);
+router.get("/appointment/:appointment_id/slots", getSlotsByAppointmentId);
+router.get("/slot/:slotId", getSlotById);
+router.get("/admin/slot/:slotId", requireAuth, getAdminSlotById);
 
 router.post("/confirm-slot", appointmentBooking);
 router.post("/confirm-slot-booking", confirmBookingController);
 
+router.patch(
+  "/slots/:slotId/consultation-complete",
+  requireAuth,
+  markConsultationCompleted
+);
+
 // bookings admin side
-router.get("/getAllBookings", getAllBookings);
+router.get("/getAllBookings", requireAuth, getAllBookings);
 
 module.exports = router;

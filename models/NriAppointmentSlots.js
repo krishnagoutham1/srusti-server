@@ -28,7 +28,13 @@ const NriAppointmentSlots = sequelize.define(
       allowNull: false,
     },
     status: {
-      type: DataTypes.ENUM("AVAILABLE", "HOLD", "BOOKED", "CANCELLED"),
+      type: DataTypes.ENUM(
+        "AVAILABLE",
+        "HOLD",
+        "BOOKED",
+        "CANCELLED"
+        // "BLOCKED"
+      ),
       allowNull: false,
       defaultValue: "AVAILABLE",
     },
