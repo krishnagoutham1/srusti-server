@@ -43,7 +43,7 @@ app.use(
   })
 );
 
-app.use("/api", appRoutes);
+app.use("/v1", appRoutes);
 
 app.get("/", (req, res) =>
   res.json({ message: "Sree Srusti server is running..." })
