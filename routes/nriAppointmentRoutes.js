@@ -16,6 +16,7 @@ const {
   getNriAppointmentById,
   getAdminSlotById,
   markConsultationCompleted,
+  markExpiredAppointments,
 } = require("../controllers/nriAppointmentController");
 const { requireAuth } = require("../middleware/authMiddleware");
 
@@ -45,6 +46,8 @@ router.patch(
   requireAuth,
   markConsultationCompleted
 );
+
+router.patch("/expire-appointments", markExpiredAppointments);
 
 // bookings admin side
 router.get("/getAllBookings", requireAuth, getAllBookings);

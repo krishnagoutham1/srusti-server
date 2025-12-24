@@ -987,7 +987,7 @@ const confirmBookingController = async (req, res) => {
 const markConsultationCompleted = async (req, res) => {
   try {
     const { slotId } = req.params;
-
+    console.log(slotId, "slotId");
     const slot = await NriAppointmentSlots.findByPk(slotId);
 
     if (!slot) {
@@ -1026,6 +1026,34 @@ const markConsultationCompleted = async (req, res) => {
   }
 };
 
+const markExpiredAppointments = async (req, res) => {
+  try {
+    const today = new Date();
+    const dateOnly = today.toISOString().split("T")[0]; // YYYY-MM-DD
+
+    const [updatedCount] = await NriAppointment.update(
+      { status: "INACTIVE" },
+      {
+        where: {
+          status: "ACTIVE",
+          appointment_date: { [Op.lt]: dateOnly },
+        },
+      }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: `${updatedCount} appointments marked as INACTIVE`,
+    });
+  } catch (error) {
+    console.error("Error updating statuses", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update appointment statuses",
+    });
+  }
+};
+
 module.exports = {
   createNriAppointmentController,
   getAllNriAppointments,
@@ -1040,6 +1068,7 @@ module.exports = {
   appointmentBooking,
   confirmBookingController,
   markConsultationCompleted,
+  markExpiredAppointments,
 };
 
 // const getAppointmentsByMonth = async (req, res) => {

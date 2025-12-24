@@ -91,7 +91,7 @@ module.exports = (data) => {
             <p><strong>Mobile:</strong> ${phone}</p>
             <p><strong>Date:</strong> ${date}</p>
             <p><strong>Time Slot:</strong> ${time}</p>
-            <p><strong>Amount Paid:</strong> ₹${(amount / 100).toFixed(2)}</p>
+            <p><strong>Amount Paid:</strong> ₹${amount}</p>
             <p><strong>Booking ID:</strong> ${bookingId}</p>
           </div>
     

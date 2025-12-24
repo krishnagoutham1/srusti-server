@@ -98,7 +98,7 @@ module.exports = (data) => {
           </div>
 
           <p style="text-align: center;">
-            <a href="http://localhost:5173/login" target="_blank" class="login-btn">Login to Your Account</a>
+            <a href="http://sreesrusti/login" target="_blank" class="login-btn">Login to Your Account</a>
           </p>
 
           <p>If you didn’t request this account or believe this email was sent in error, please contact our support team immediately.</p>
@@ -113,5 +113,3 @@ module.exports = (data) => {
     </body>
   </html>`;
 };
-
-// http://localhost:5173/login
