@@ -5,6 +5,7 @@ const { Otp, Users } = require("../models");
 const {
   sendUserCreationEmail,
   sendOtpEmail,
+  sendAccountApprovedEmail,
 } = require("../utils.js/sendEmail");
 const {
   generateOTP,
@@ -100,8 +101,7 @@ const verifyUser = async (req, res) => {
     // ✉️ Send account approval email
     await sendAccountApprovedEmail({
       name: user.name,
-      // email: user.email,
-      email: "jktechminds@gmail.com",
+      email: user.email,
     });
 
     console.log(`✅ User ${user.email} approved and email sent`);
